@@ -2,9 +2,27 @@
   "name": "llm-code-harvester",
   "version": "1.0.0",
   "description": "CLI tool to harvest code snippets from a directory, optimized for LLM export",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HawkeyePierce89/llm-code-harvester"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "code",
+    "snippets",
+    "export",
+    "llm",
+    "harvester"
+  ],
   "bin": {
     "llm-code-harvester": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
