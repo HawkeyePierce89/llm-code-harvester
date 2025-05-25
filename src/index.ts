@@ -39,13 +39,18 @@ export async function collectFiles(dir: string): Promise<string[]> {
 
 /**
  * Attempts to copy `data` to the clipboard using native OS utilities.
- * If the utility is not found or errors, falls back to stdout.
+ * If running in CI or if the utility errors, falls back to stdout.
  */
 function copyToClipboard(data: string) {
+    // In CI (e.g. GitHub Actions) we always dump to stdout so tests can capture it
+    if (process.env.CI) {
+        process.stdout.write(data);
+        return;
+    }
+
     const platform = process.platform;
     let proc: import('child_process').ChildProcessWithoutNullStreams;
 
-    // pick the appropriate command for the platform
     if (platform === 'darwin') {
         proc = spawn('pbcopy');
     } else if (platform === 'win32') {
@@ -54,12 +59,11 @@ function copyToClipboard(data: string) {
         proc = spawn('xclip', ['-selection', 'clipboard']);
     }
 
-    // handle errors (e.g. command not found) by writing directly
     proc.on('error', () => {
+        // utility not found or failed → fallback to stdout
         process.stdout.write(data);
     });
 
-    // if spawn succeeded, pipe data
     if (proc.stdin) {
         proc.stdin.write(data);
         proc.stdin.end();
