@@ -20,7 +20,7 @@ import { spawn } from 'child_process';
  * @param dir - Absolute path to directory
  * @returns Array of absolute file paths
  */
-async function collectFiles(dir: string): Promise<string[]> {
+export async function collectFiles(dir: string): Promise<string[]> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const files: string[] = [];
 
@@ -75,7 +75,7 @@ function copyToClipboard(data: string) {
 async function main() {
     const [target] = process.argv.slice(2);
     if (!target) {
-        console.error('Usage: snippet-collector <path-to-directory>');
+        console.error('Usage: llm-code-harvester <path-to-directory>');
         process.exit(1);
     }
 
@@ -114,9 +114,10 @@ async function main() {
     copyToClipboard(output);
 }
 
-main().catch(err => {
-    console.error('Unexpected error:', err);
-    process.exit(1);
-});
-
-export { collectFiles };
+// Only run main() if this file is executed directly
+if (require.main === module) {
+    main().catch(err => {
+        console.error('Unexpected error:', err);
+        process.exit(1);
+    });
+}
