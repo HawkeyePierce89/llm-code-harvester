@@ -15,73 +15,34 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 
 /**
- * Recursively collects all file paths under `dir`.
- *
- * @param dir - Absolute path to directory
- * @returns Array of absolute file paths
- */
-async function collectFiles(dir: string): Promise<string[]> {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    const files: string[] = [];
-
-    for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-            // Recurse into subdirectory
-            files.push(...await collectFiles(fullPath));
-        } else if (entry.isFile()) {
-            files.push(fullPath);
-        }
-    }
-
-    return files;
-}
-
-/**
- * Attempts to copy `data` to clipboard using native OS utilities.
- * Falls back to writing to stdout if no clipboard command is found.
- *
- * @param data - String content to copy
+ * Attempts to copy `data` to the clipboard using native OS utilities.
+ * If the utility is not found or errors, falls back to stdout.
  */
 function copyToClipboard(data: string) {
     const platform = process.platform;
+    let proc: import('child_process').ChildProcessWithoutNullStreams;
 
-    // Determine clipboard command based on platform
-    let proc;
+    // pick the appropriate command for the platform
     if (platform === 'darwin') {
-        // macOS: pbcopy
         proc = spawn('pbcopy');
     } else if (platform === 'win32') {
-        // Windows: clip
         proc = spawn('clip');
     } else {
-        // Linux/other: try xclip, xsel, or fallback
-        // You may need to install xclip or xsel on your system.
-        try {
-            proc = spawn('xclip', ['-selection', 'clipboard']);
-        } catch {
-            try {
-                proc = spawn('xsel', ['--clipboard', '--input']);
-            } catch {
-                console.warn(
-                    '⚠️  No native clipboard utility found (xclip/xsel). Output will be written to stdout.'
-                );
-                process.stdout.write(data);
-                return;
-            }
-        }
+        proc = spawn('xclip', ['-selection', 'clipboard']);
     }
 
-    // Pipe data into the clipboard utility
+    // handle errors (e.g. command not found) by writing directly
+    proc.on('error', () => {
+        process.stdout.write(data);
+    });
+
+    // if spawn succeeded, pipe data
     if (proc.stdin) {
         proc.stdin.write(data);
         proc.stdin.end();
         proc.on('close', () => {
             console.log('✅ Content copied to clipboard.');
         });
-    } else {
-        // If for any reason stdin is unavailable, fallback
-        process.stdout.write(data);
     }
 }
 
