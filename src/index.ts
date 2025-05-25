@@ -15,6 +15,29 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 
 /**
+ * Recursively collects all file paths under `dir`.
+ *
+ * @param dir - Absolute path to directory
+ * @returns Array of absolute file paths
+ */
+async function collectFiles(dir: string): Promise<string[]> {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files: string[] = [];
+
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            // Recurse into subdirectory
+            files.push(...await collectFiles(fullPath));
+        } else if (entry.isFile()) {
+            files.push(fullPath);
+        }
+    }
+
+    return files;
+}
+
+/**
  * Attempts to copy `data` to the clipboard using native OS utilities.
  * If the utility is not found or errors, falls back to stdout.
  */
